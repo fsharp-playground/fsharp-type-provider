@@ -11,9 +11,10 @@ type TwitterStreamTest() =
 
     [<Test>]
     member this.TestAsyncLoad() =
-        let twitter = Twitter.AsyncLoad("https://fsharp.github.io/FSharp.Data/data/TwitterStream.json")
-        let x = twitter
-        0
+        let data = Twitter.AsyncLoad("https://fsharp.github.io/FSharp.Data/data/TwitterStream.json") |> Async.RunSynchronously
+        let twitters = data.JsonValue.AsArray()
+        let twitter0 = Twitter.Parse(twitters.[0].ToString())
+        Assert.AreEqual(Some 0,  twitter0.RetweetCount)
 
     [<Test>]
     member this.TestNumberOfItems() =
@@ -23,9 +24,9 @@ type TwitterStreamTest() =
     [<Test>]
     member this.TestFirstUser() =
         let twitter = Twitter.GetSamples()
-        let user = twitter.[0].User
-        Assert.AreEqual(user, "Hailey")
+        let user = twitter.[0].User.Value.Name
 
+        Assert.AreEqual(user, "Hailey")
 
     [<Test>]
     member this.TestFirstTweet() =
