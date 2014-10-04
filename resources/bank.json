@@ -1,0 +1,33 @@
+[
+    {
+        "page": 1,
+        "pages": 1,
+        "total": 53
+    },
+    [
+        {
+            "country": {
+                "id": "CZ",
+                "value": "Czech Republic"
+            },
+            "date": "2000",
+            "decimal": "1",
+            "indicator": {
+                "value": "Central government debt, total (% of GDP)"
+            },
+            "value": null
+        },
+        {
+            "country": {
+                "id": "CZ",
+                "value": "Czech Republic"
+            },
+            "date": "2010",
+            "decimal": "1",
+            "indicator": {
+                "value": "Central government debt, total (% of GDP)"
+            },
+            "value": "16.6567773464055"
+        }
+    ]
+]
