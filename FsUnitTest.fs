@@ -1,11 +1,11 @@
 ﻿namespace TypeProviderTest
 
 open NUnit.Framework
-open FsUnit.TopLevelOperators
+open FsUnit
 
 [<TestFixture>]
-type TestFsUnit = 
+type TestFsUnit() = 
 
     [<Test>]
     member this.Test() =
-        "x" |> should equal "Y"
+        1 |> should equal 1
