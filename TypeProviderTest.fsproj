@@ -50,11 +50,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SimpleJsonProviderTest.fs" />
-    <Compile Include="JsonFileProviderTest.fs" />
-    <Compile Include="TwitterStreamTest.fs" />
-    <Compile Include="FsUnitTest.fs" />
-    <Compile Include="ExtensionsTest.fs" />
+    <Compile Include="Providers\JsonFileProviderTest.fs" />
+    <Compile Include="Providers\SimpleJsonProviderTest.fs" />
+    <Compile Include="Providers\TwitterStreamTest.fs" />
+    <Compile Include="Providers\ExtensionsTest.fs" />
+    <Compile Include="Features\UniqueFeaturesTest.fs" />
+    <Compile Include="Providers\FsUnitTest.fs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" />
   <ItemGroup>
@@ -66,5 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="resources\" />
+    <Folder Include="Providers\" />
+    <Folder Include="Features\" />
   </ItemGroup>
 </Project>
