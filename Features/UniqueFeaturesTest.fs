@@ -1,5 +1,272 @@
 ﻿namespace UniqueFeaturesTest
 
+(* Pattern matching *)
+module PatternMatching =
+
+    open NUnit.Framework
+    open FsUnit
+
+    let isEvenNumber x = x % 2 = 0
+    let transformEvenToZero x =
+        match isEvenNumber x with
+        | true -> 0
+        | false -> x
+
+    [<TestFixture>]
+    type PatternTest() =
+
+        [<Test>]
+        member this.TestDict() =
+            let f x =
+                let dict = System.Collections.Generic.Dictionary()
+                dict.[0] <- "Zero"
+                dict.[1] <- "One"
+
+                match dict.TryGetValue x with
+                | true, v -> sprintf "found %A mapped to %s" x v
+                | false, _ -> "cannot find"
+
+            f 0 |> should equal "found 0 mapped to Zero"
+            f 5 |> should equal "cannot find"
+
+        [<Test>]
+        member this.TestTuplePattern() =
+            let sample (x,y) = 
+                match x,y with
+                | true, true -> true
+                | false, false -> true 
+                | _ -> false
+
+            sample (true, false) |> should equal false
+            sample (false, true) |> should equal false
+            sample (false, false) |> should equal true
+            sample (true, true) |> should equal true
+
+        [<Test>]
+        member this.TestMatch() =
+            transformEvenToZero 2 |> should equal 0
+            transformEvenToZero 1 |> should equal 1
+
+        [<Test>]
+        member this.TestFunctionKeyword() =
+            let sample x = 
+                match x with
+                | 1 -> "One"
+                | 2 -> "Two"
+                | _ -> "None"
+
+            sample 1 |> should equal "One"
+            sample 9 |> should equal "None"
+
+(* Comparition operator *)
+module CompareOperation =
+
+    open NUnit.Framework
+    open FsUnit
+
+    type Record = { x:int ; y:int }
+    type Tuple = int * int
+    type DU = 
+        | Case1 of int
+        | Case2 of string
+        | Case3 of float
+
+    [<TestFixture>]
+    type CompareTest() =
+        [<Test>]
+        member this.CompareTuple() =
+            (1, 1) = (2, 1) |> should equal false
+            (1+1, 1) = (2, 1) |> should equal true
+
+        [<Test>]
+        member this.CompareRecord() =
+            { x = 100; y = 0 } = { x = 100; y = 0} |> should equal true
+
+        [<Test>]
+        member this.CompareTupleType() =
+            let x: Tuple = (1, 100)
+            let y: Tuple = (1, 200)
+            let z: Tuple = (1, 300)
+            compare x y |> should equal -1
+            compare z y |> should equal 1
+            compare x x |> should equal 0
+
+        [<Test>]
+        member this.CompareDU() =
+            compare (Case1 100) (Case1 200) |> should equal -1
+            compare (Case2 "c") (Case2 "b") |> should equal 1
+            compare (Case3 2.) (Case3 2.) |> should equal 0
+
+(* Binary tree BU *)
+module BinaryTreeBU = 
+
+    open NUnit.Framework
+    open FsUnit
+
+    type NodeType = int
+    type BinaryTree =
+        | Nil
+        | Node of NodeType * BinaryTree * BinaryTree
+
+    let tree = 
+        Node(5,
+            Node(42,
+                Node(3, Nil, Nil), 
+                Node(2, Nil, Nil)),
+            Node(4, 
+                Node(13, 
+                    Node(14, Nil, Nil),
+                    Node(16, Nil, Nil)),
+                Node(12,
+                    Node(15, Nil, Nil),
+                    Node(21, 
+                        Node(22, Nil, Nil), 
+                        Nil))))
+
+
+    let layerTreverse state =
+        match state with 
+        | [] -> None
+        | h::t ->
+            match h with
+            | Nil -> None
+            | Node(v, Nil, Nil) -> Some(v, t)
+            | Node(v, subTree, Nil)
+            | Node(v, Nil, subTree) -> Some(v, t@[subTree])
+            | Node(v, l, r) -> Some(v, t@[l;r] )
+
+
+    [<TestFixture>]
+    type TreverseTest() =
+        [<Test>]
+        member this.Test() =
+            let x = 
+                [tree]
+                |> Seq.unfold layerTreverse
+                |> Seq.toList
+
+            x.Head |> should equal 5 
+            x.Tail.Head |> should equal 42
+            printfn "%A" x
+
+
+(* DU with interface *)
+module DUWithInterface =
+
+    open NUnit.Framework
+    open FsUnit
+
+    type IShape =
+        abstract Area: double with get
+
+    type ShapeWithInterface = 
+        | Circle of double
+        | Triangle of double * double * double
+        | Rectangle of double * double
+        interface IShape
+            with member this.Area = 
+                    match this with 
+                    | Circle(r) -> r * r * System.Math.PI
+                    | Triangle(a, b, c) -> 
+                        let  s = (a + b + c) / 2.
+                        sqrt(s * (s - a) * (s - b) * (s - c ))
+                    | Rectangle(a, b) -> a * b
+        override this.ToString() = "ThisIsAShapeWithInterfaceType"
+
+    [<TestFixture>]
+    type IntefaceTest() =
+        [<Test>]
+        member this.Test() =
+            let x = Rectangle(10., 10.)
+            (x :> IShape).Area |> should equal 100
+
+(* DU with method *)
+module DUWithMethod =
+    type Tree =
+        | Tip of NodeType
+        | Node of int * Tree * Tree
+        override this.ToString() = "ThisIsATreeDU"
+
+    and NodeType =
+        | NodeContent of int
+        override this.ToString() = "ThisIsANodeTypeDU"
+
+
+module RecuriveDU = 
+    type Tree =
+        | Tip of NodeType
+        | Node of int * Tree * Tree
+    and NodeType =
+        | NodeContent of int
+
+
+module DefineDiscrimentalUnion = 
+    type Shape =
+        | Circle of double
+        | Triangle of double * double * double
+        | Rectangle of double * double
+
+    type Number = OddNumber | EventNumber
+
+
+module DefaultRecordConstructor = 
+
+    open NUnit.Framework
+    open FsUnit
+
+    [<CLIMutable>]
+    type R1 = { x: int; y: int }
+
+    type R2 = {
+        x: int
+        y: int }
+
+    [<TestFixture>]
+    type ConstructAttribute() =
+        [<Test>]
+        member this.Construct() =
+            //let r1 = new R1(100, 200) // error no constructor enable
+            let r2 = { R2.x = 100; R2.y = 200 }
+            //r1.x |> should equal 100
+            r2.x |> should equal 100
+
+module RecordComparition = 
+
+    open NUnit.Framework
+    open FsUnit
+
+    type Point = {
+        x:float
+        mutable y:float }
+
+    [<TestFixture>]
+    type Comparision() =
+        [<Test>]
+        member this.Compare() =
+            let p = { x = 100.0; y = 100.0}
+            let q = { x = 100.0; y = 100.0}
+            p = q |> should equal true
+
+            q.y <- 200.0
+            p = q |> should equal false
+
+module StaticMember =
+
+    open NUnit.Framework
+    open FsUnit
+
+    type Point2D = 
+        {
+            x: float
+            y: float
+        }
+        static member OriginalPoint = { x = 100.; y = 100. }
+
+    [<TestFixture>]   
+    type OriginalPointTest() =
+        [<Test>]
+        member this.StaticTest() =
+            Point2D.OriginalPoint.x |> should equal 100.
 
 
 
