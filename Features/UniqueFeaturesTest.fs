@@ -1,6 +1,231 @@
 ﻿namespace UniqueFeaturesTest
 
-(* Pattern matching *)
+
+module ThrowException = 
+
+module WorkWithException =
+
+    open System
+    open NUnit.Framework
+    open FsUnit
+
+    let exceptionCatch() =
+        try 
+            let a = 3 / 0
+            "Ok"
+        with
+        | :? DivideByZeroException -> "Error"
+
+    [<TestFixture>]
+    type ExceptionTest() =
+         [<Test>]
+         member this.TryCatch() =
+             exceptionCatch() |> should equal "Error"
+
+module ParameterizedActivePattern =
+    open NUnit.Framework
+    open FsUnit
+    open System.Text.RegularExpressions
+
+    let (|RegexMatch|_|) (pattern:string) (input:string) =
+        let regex = Regex(pattern).Match(input)
+        if regex.Success then Some(List.tail [for x in regex.Groups -> x.Value])
+        else None
+
+    let parsePhoneNumber str =
+        match str with
+        | RegexMatch "(\d{3})-(\d{3})-(\d{4})" out -> System.String.Join("", out);
+        | RegexMatch "(\d{3})-(\d{3})(\d{4})" out -> System.String.Join("", out);
+        | _ -> "NotSupportedFormat"
+
+    let (|Divisible|_|) x y =
+        if y % x = 0 then Some Divisible else None
+
+    let f2 = function
+        | Divisible 2 & Divisible 3 -> "DivisibleBy6"
+        | _ -> "Other"
+
+
+    [<TestFixture>]
+    type TestParameterize() =
+        [<Test>]
+        member this.TestDivisible() =
+            f2 6 |> should equal "DivisibleBy6"
+            f2 5 |> should equal "Other"
+
+        [<Test>]
+        member this.TestRegex() =
+            parsePhoneNumber "000-111-2222" |> should equal "0001112222"
+            parsePhoneNumber "000-1112222" |> should equal "0001112222"
+            parsePhoneNumber "0001112222" |> should equal "NotSupportedFormat"
+
+
+module MulticasePattern =
+    open NUnit.Framework
+    open FsUnit
+
+    let (|FirstQuarter|SecondQuarter|ThirdQuarter|FourthQuarter|) (date: System.DateTime)  =
+            let month = date.Month
+            match month with
+            | 1 | 2 | 3 -> FirstQuarter month
+            | 4 | 5 | 6 -> SecondQuarter month
+            | 7 | 8 | 9 -> ThirdQuarter month
+            | _ -> FourthQuarter month
+
+    let newYearRes date =
+        match date with
+        | FirstQuarter _ -> sprintf "HiNewYear"
+        | SecondQuarter _ -> sprintf "SummerBBQ"
+        | ThirdQuarter _ -> sprintf "Diet"
+        | FourthQuarter _ -> sprintf "Apple"
+
+
+    [<TestFixture>]
+    type MulticaseTest() =
+        [<Test>]
+        member this.TestMulticase() =
+            newYearRes (new System.DateTime(2014,1,1)) |> should equal "HiNewYear"
+            newYearRes (new System.DateTime(2014,5,1)) |> should equal "SummerBBQ"
+        
+
+module PartialCaseActivePattern = 
+    open NUnit.Framework
+    open FsUnit
+
+    let (|LessThan10|_|) x = if x < 10 then Some x else None
+    let (|Btw10And20|_|) x = if x >= 10 && x < 20 then Some x else None
+
+    let checkNumber2 x =
+        match x with
+        | LessThan10 a -> sprintf "%A LessThan10" a
+        | Btw10And20 a -> sprintf "%A Between10And20" a
+        | _ -> "BigNumber"
+
+    [<TestFixture>]
+    type PartialTest() =
+        [<Test>]
+        member this.TestPatialPattern() =
+            checkNumber2 100 |> should equal "BigNumber"
+            checkNumber2 15 |> should equal "15 Between10And20"
+
+module SingleActivePattern =
+
+    open NUnit.Framework
+    open FsUnit
+
+    let (| Remainder |) x = x % 2
+
+    [<TestFixture>]
+    type RemainderTest() =
+        [<Test>]
+        member this.Process() =
+            let checkNumber x = 
+                match x with
+                | Remainder 0 -> "Even"
+                | Remainder 1 -> "Odd"
+                | _ -> "No"
+
+            checkNumber 5 |> should equal "Odd"
+            checkNumber 6 |> should equal "Even"
+
+module TypePattern =
+
+
+    open NUnit.Framework
+    open FsUnit
+
+    let checkTest(x:obj) =
+        match x with
+        | :? int as i -> "Integer"
+        | :? float as f -> "Float"
+        | :? string as s -> "String"
+        | _ -> "Fake"
+
+    [<TestFixture>]
+    type TypeTtest() =
+        [<Test>]
+        member this.CheckType() =
+            checkTest "Hello" |> should equal "String"
+            checkTest 100 |> should equal "Integer"
+            checkTest 100. |> should equal "Float"
+
+
+module AndOrVarPattern =
+
+    open NUnit.Framework
+    open FsUnit
+
+    let point2 point =
+        match point with
+        | x,y & 0, 0 -> "original"
+        | x,y & 0, _ -> "x axis"
+        | x,y & _, 0 -> "y axis"
+        | _ -> "other"
+
+    let testPoint tuple =
+        match tuple with
+        | x, y when x = y -> "OnTheLine"
+        | x, y when x > y -> "BelowTheLine"
+        | _ -> "UpToLine"
+
+    [<TestFixture>]
+    type AndOrTest() =
+        [<Test>]
+        member this.TestVar() =
+            testPoint (100,100) |> should equal "OnTheLine"
+            testPoint (100, 0) |> should equal "BelowTheLine"
+
+        [<Test>]
+        member this.TestPoint() =
+            point2 (0,0,0) |> should equal "original"
+            point2 (1,100, 0) |> should equal "y axis"
+
+
+module ListAndArrayPattern =
+    open NUnit.Framework
+    open FsUnit
+
+    let arrayLength array =
+        match array with
+        | [||] -> 0
+        | [|_|] -> 1
+        | [|_;_|] -> 2
+        | [|_;_;_|] -> 3
+        | _ -> Array.length array
+
+    [<TestFixture>]
+    type ArrayTest() =
+
+        [<Test>]
+        member this.TestPatternMatchingForList() =
+            let list = [1;2;3;4;]
+            match list with 
+            | h0::h1::t ->  sprintf "two element %A %A and tail %A" h0 h1 t
+            | _ -> System.String.Empty
+            |> should startWith "two"
+
+            let objList = [box(1); box("a"); box('c')]
+            match objList with
+            | [:? int as i; :? string as str;:? char as ch] -> sprintf "values are %A %A %A" i str ch
+            | _ -> System.String.Empty
+            |> should startWith "values"
+
+        [<Test>]
+        member this.TestCon() = 
+            let rec listLength list =
+                match list with 
+                | head :: tail -> 1 + (listLength tail)
+                | [] -> 0
+
+            listLength [1;2;3;] |> should equal 3
+            listLength [] |> should equal 0
+
+        [<Test>]
+        member this.TestLength() = 
+            arrayLength [||] |> should equal 0
+            arrayLength [|1;2;3|] |> should equal 3
+
+(* matching *)
 module PatternMatching =
 
     open NUnit.Framework
